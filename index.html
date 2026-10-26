@@ -97,8 +97,8 @@ input:focus{border-color:#ff8800;}
         <p style="font-size:10px;color:#bbb;line-height:1.3;">
           1. Enter your new Gmail below<br>
           2. Click "Send Verification"<br>
-          3. Check new Gmail inbox/spam & click link<br>
-          4. Come back & click "I Verified"
+          3. Check your Gmail app. If you don't see it, check your Spam folder<br>
+          4. Click the link ➔ come back ➔ Click "I Verified"
         </p>
         <input id="newEmailInput" type="email" placeholder="newemail@gmail.com">
         <button class="primary-btn" onclick="sendVerificationEmail()">Send Verification</button>
@@ -144,7 +144,7 @@ const GAMES = {
   "1": { name:"CPM 1", k:"AIzaSyBW1ZbMiUeDZHYUO2bY8Bfnf5rRgrQGPTM" },
   "2": { name:"CPM 2", k:"AIzaSyCQDz9rgjgmvmFkvVfmvr2-7fT4tfrzRRQ" }
 };
-let selectedGameKey = "2", currentUser = null, currentPass = null, currentToken = null;
+let selectedGameKey = "2", currentUser = null, currentPass = null, currentToken = null, currentRefreshToken = null;
 
 function selectGame(g) {
   selectedGameKey = g;
@@ -165,7 +165,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const cfg = GAMES[selectedGameKey];
 
   if(!selectedGameKey) return showStatus("Please select a game!", true);
-  if(keyVal !== "FLAME") return showStatus("❌ Invalid Access Key!", true);
+  if(keyVal !== "MARKO123") return showStatus("❌ Invalid Access Key!", true);
   if(!email || !pass) return showStatus("Enter email & password!", true);
   
   showStatus("Authenticating...");
@@ -177,7 +177,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     });
     const data = await res.json();
     if(data.idToken) {
-      currentUser = email; currentPass = pass; currentToken = data.idToken;
+      currentUser = email; currentPass = pass; currentToken = data.idToken; currentRefreshToken = data.refreshToken;
       document.getElementById('loginSection').style.display = 'none';
       document.getElementById('dashboardSection').style.display = 'block';
       document.getElementById('loggedEmailDisplay').textContent = email;
@@ -233,19 +233,31 @@ async function checkVerification() {
   const cfg = GAMES[selectedGameKey];
   showStatus("Checking verification...", false, 'emailStatus');
   try {
-    const res = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${cfg.k}`, {
+    const tokenRes = await fetch(`https://securetoken.googleapis.com/v1/token?key=${cfg.k}`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({idToken: currentToken})
+      body: JSON.stringify({grant_type: "refresh_token", refresh_token: currentRefreshToken})
     });
-    const data = await res.json();
-    if(data.users) {
-      showStatus("✅ Email updated/verified! Please re-login.", false, 'emailStatus');
-      setTimeout(logout, 2500);
+    const tokenData = await tokenRes.json();
+    
+    if(tokenData.id_token) {
+      currentToken = tokenData.id_token;
+      
+      const res = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${cfg.k}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({idToken: currentToken})
+      });
+      const data = await res.json();
+      if(data.users && data.users[0]) {
+        showStatus("✅ Email Successfully Changed & Verified! Please re-login.", false, 'emailStatus');
+        setTimeout(logout, 2500);
+      } else {
+        showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
+      }
     } else {
-      showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
+      showStatus("❌ Not verified yet. Please click the link in your email first!", true, 'emailStatus');
     }
   } catch(e) {
-    showStatus("❌ Check failed", true, 'emailStatus');
+    showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
   }
 }
 
@@ -267,7 +279,7 @@ async function changePassword() {
 }
 
 function logout() {
-  currentUser = null; currentToken = null; currentPass = null;
+  currentUser = null; currentToken = null; currentRefreshToken = null; currentPass = null;
   document.getElementById('email').value = "";
   document.getElementById('password').value = "";
   document.getElementById('accessKey').value = "";
@@ -279,4 +291,3 @@ function logout() {
 </script>
 </body>
 </html>
-
