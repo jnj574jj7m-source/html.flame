@@ -189,7 +189,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const cfg = GAMES[selectedGameKey];
 
   if(!selectedGameKey) return showStatus("Please select a game!", true);
-  if(keyVal !== "FLAME") return showStatus("❌ Invalid Access Key!", true);
+  if(keyVal !== "MARKOSDEN") return showStatus("❌ Invalid Access Key!", true);
   if(!email || !pass) return showStatus("Enter email & password!", true);
   
   showStatus("Authenticating...");
