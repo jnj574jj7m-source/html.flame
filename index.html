@@ -1,0 +1,268 @@
+Sheri, app-inte name "MARKO CPM" ennu maattiyulla complete code thazhe nalkunnu:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MARKO CPM</title>
+<style>
+body{margin:0;padding:0;font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;}
+.phone-frame{width:100%;max-width:400px;height:100%;max-height:750px;background:#121212;display:flex;flex-direction:column;position:relative;border-radius:20px;box-shadow:0 0 30px rgba(0,0,0,0.8);border:1px solid #333;}
+.header{padding:15px;text-align:center;border-bottom:1px solid #222;background:#1a1a1a;border-top-left-radius:20px;border-top-right-radius:20px;}
+.header h2{margin:0;font-size:16px;color:#ff8800;letter-spacing:1px;}
+.header p{margin:2px 0 0;font-size:11px;color:#888;}
+.content{flex:1;overflow-y:auto;padding:20px;padding-bottom:80px;}
+.container{background:rgba(255,255,255,0.03);backdrop-filter:blur(10px);padding:15px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);text-align:center;margin-bottom:15px;}
+.game-selector{display:flex;gap:10px;margin-bottom:15px;}
+.game-btn{flex:1;padding:10px;border-radius:8px;border:1px solid #444;background:transparent;color:#aaa;font-weight:bold;cursor:pointer;}
+.game-btn.active{background:linear-gradient(135deg, #ff8800, #ffaa00);color:#000;border:none;box-shadow:0 0 10px rgba(255,136,0,0.4);}
+input{width:100%;box-sizing:border-box;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #444;background:rgba(0,0,0,0.5);color:#fff;font-size:14px;outline:none;}
+input:focus{border-color:#ff8800;}
+.primary-btn{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:0;cursor:pointer;font-weight:bold;font-size:15px;background:linear-gradient(135deg, #ff5500, #ff8800);color:#fff;box-shadow:0 4px 15px rgba(255,85,0,0.3);}
+.primary-btn:active{transform:scale(0.98);}
+.status{margin-top:10px;font-size:13px;font-weight:bold;min-height:20px;}
+.success{color:#00ff88;}
+.error{color:#ff4444;}
+.menu-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:15px;border-radius:10px;margin-bottom:10px;text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.menu-card:hover{border-color:#ff8800;}
+.menu-card h4{margin:0;font-size:14px;color:#fff;}
+.menu-card p{margin:3px 0 0;font-size:11px;color:#aaa;}
+/* Bottom Navigation */
+.nav-bar{position:absolute;bottom:0;left:0;width:100%;height:65px;background:#161616;border-top:1px solid #282828;display:flex;justify-content:space-around;align-items:center;border-bottom-left-radius:20px;border-bottom-right-radius:20px;}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:#777;font-size:10px;cursor:pointer;}
+.nav-item.active{color:#ff8800;}
+.nav-item svg{width:20px;height:20px;margin-bottom:3px;fill:currentColor;}
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="header">
+    <h2>MARKO CPM</h2>
+    <p>mini app</p>
+  </div>
+
+  <div class="content">
+    <!-- LOGIN SECTION -->
+    <div id="loginSection">
+      <div class="container">
+        <div class="game-selector">
+          <button class="game-btn active" id="g1" onclick="selectGame('1')">CPM 1</button>
+          <button class="game-btn" id="g2" onclick="selectGame('2')">CPM 2</button>
+        </div>
+        <input id="email" type="email" placeholder="Email address">
+        <input id="password" type="password" placeholder="Password">
+        <button class="primary-btn" id="loginBtn">Sign In</button>
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD SECTION -->
+    <div id="dashboardSection" style="display:none;">
+      <div class="container" style="text-align:left;background:rgba(255,136,0,0.05);border-color:#ff8800;">
+        <div style="font-size:11px;color:#ff8800;font-weight:bold;">LOGGED CPM EMAIL</div>
+        <div id="loggedEmailDisplay" style="font-size:13px;font-weight:bold;margin:3px 0;word-break:break-all;"></div>
+        <span style="background:#ff8800;color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:bold;">ACTIVE</span>
+      </div>
+
+      <div class="menu-card" onclick="openEmailModal()">
+        <div>
+          <h4>Update Email</h4>
+          <p>Auto or Manual</p>
+        </div>
+        <span style="font-size:18px;color:#ff8800;">➔</span>
+      </div>
+
+      <div class="menu-card" onclick="changePassword()">
+        <div>
+          <h4>Update Password</h4>
+          <p>Change CPM pass</p>
+        </div>
+        <span style="font-size:18px;color:#ff8800;">➔</span>
+      </div>
+
+      <div class="menu-card" onclick="logout()" style="border-color:rgba(255,68,68,0.3);">
+        <div>
+          <h4 style="color:#ff4444;">Logout</h4>
+          <p>Sign out from this device</p>
+        </div>
+      </div>
+      <div id="serviceStatus" class="status"></div>
+    </div>
+
+    <!-- EMAIL UPDATE VIEW -->
+    <div id="emailUpdateSection" style="display:none;">
+      <div class="container" style="text-align:left;">
+        <h3 style="margin-top:0;color:#ff8800;font-size:15px;">MANUAL MODE (Your Gmail)</h3>
+        <p style="font-size:11px;color:#bbb;line-height:1.4;">
+          1. Enter your Gmail below<br>
+          2. Check inbox (and Spam) for Firebase email<br>
+          3. Click the link ➔ come back ➔ Click "I Verified"
+        </p>
+        <input id="newEmailInput" type="email" placeholder="yournewemail@gmail.com">
+        <button class="primary-btn" onclick="sendVerificationEmail()">Send Verification</button>
+        
+        <div id="verifyStepBox" style="display:none;margin-top:15px;">
+          <p style="font-size:12px;color:#00ff88;">Verification email sent! Check your Gmail.</p>
+          <button class="primary-btn" style="background:linear-gradient(135deg, #00aa44, #00ff88);color:#000;" onclick="checkVerification()">✅ I Verified — Check Now</button>
+        </div>
+        <button class="primary-btn" style="background:#333;margin-top:8px;" onclick="backToDashboard()">Back</button>
+        <div id="emailStatus" class="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <div class="nav-bar">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Home
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.76l.12.34V17z"/></svg>
+      Cars
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      Updater
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      Valid
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Me
+    </div>
+  </div>
+</div>
+
+<script>
+const GAMES = {
+  "1": { name:"CPM 1", k:"AIzaSyBW1ZbMiUeDZHYUO2bY8Bfnf5rRgrQGPTM" },
+  "2": { name:"CPM 2", k:"AIzaSyCQDz9rgjgmvmFkvVfmvr2-7fT4tfrzRRQ" }
+};
+let selectedGameKey = "2", currentUser = null, currentPass = null, currentToken = null;
+
+function selectGame(g) {
+  selectedGameKey = g;
+  document.getElementById('g1').className = g === '1' ? 'game-btn active' : 'game-btn';
+  document.getElementById('g2').className = g === '2' ? 'game-btn active' : 'game-btn';
+}
+
+function showStatus(msg, isError=false, target='status') {
+  const el = document.getElementById(target);
+  el.className = isError ? 'status error' : 'status success';
+  el.textContent = msg;
+}
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('password').value;
+  const cfg = GAMES[selectedGameKey];
+
+  if(!email || !pass) return showStatus("Enter email & password!", true);
+  showStatus("Authenticating...");
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${cfg.k}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password: pass, returnSecureToken: true})
+    });
+    const data = await res.json();
+    if(data.idToken) {
+      currentUser = email; currentPass = pass; currentToken = data.idToken;
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('loggedEmailDisplay').textContent = email;
+    } else {
+      showStatus("❌ " + (data.error?.message || "Login Failed"), true);
+    }
+  } catch(e) {
+    showStatus("❌ Connection Error", true);
+  }
+});
+
+function openEmailModal() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('emailUpdateSection').style.display = 'block';
+}
+
+function backToDashboard() {
+  document.getElementById('emailUpdateSection').style.display = 'none';
+  document.getElementById('dashboardSection').style.display = 'block';
+}
+
+async function sendVerificationEmail() {
+  const newEmail = document.getElementById('newEmailInput').value.trim();
+  const cfg = GAMES[selectedGameKey];
+  if(!newEmail) return showStatus("Enter new email!", true, 'emailStatus');
+  
+  showStatus("Sending verification link...", false, 'emailStatus');
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${cfg.k}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({idToken: currentToken, email: newEmail, returnSecureToken: true})
+    });
+    const data = await res.json();
+    if(data.email) {
+      showStatus("Check your Gmail spam/inbox!", false, 'emailStatus');
+      document.getElementById('verifyStepBox').style.display = 'block';
+    } else {
+      showStatus("❌ " + (data.error?.message || "Failed"), true, 'emailStatus');
+    }
+  } catch(e) {
+    showStatus("❌ Error updating email", true, 'emailStatus');
+  }
+}
+
+async function checkVerification() {
+  const cfg = GAMES[selectedGameKey];
+  showStatus("Checking status...", false, 'emailStatus');
+  try {
+    const res = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${cfg.k}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({idToken: currentToken})
+    });
+    const data = await res.json();
+    if(data.users && data.users[0].emailVerified) {
+      showStatus("✅ Email verified! Please re-login.", false, 'emailStatus');
+      setTimeout(logout, 2000);
+    } else {
+      showStatus("❌ Not verified yet. Click the link in your email!", true, 'emailStatus');
+    }
+  } catch(e) {
+    showStatus("❌ Check failed", true, 'emailStatus');
+  }
+}
+
+async function changePassword() {
+  const newP = prompt("Enter New Password:");
+  if(!newP) return;
+  const cfg = GAMES[selectedGameKey];
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${cfg.k}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({idToken: currentToken, password: newP, returnSecureToken: true})
+    });
+    const data = await res.json();
+    if(data.idToken) {
+      alert("✅ Password Updated Successfully!");
+      currentPass = newP; currentToken = data.idToken;
+    } else { alert("❌ Error: " + data.error.message); }
+  } catch(e) { alert("❌ Update Failed!"); }
+}
+
+function logout() {
+  currentUser = null; currentToken = null; currentPass = null;
+  document.getElementById('email').value = "";
+  document.getElementById('password').value = "";
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('emailUpdateSection').style.display = 'none';
+  document.getElementById('loginSection').style.display = 'block';
+  showStatus("");
+}
+</script>
+</body>
+</html>
+
