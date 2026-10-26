@@ -19,7 +19,7 @@ input{width:100%;box-sizing:border-box;padding:10px;margin:6px 0;border-radius:6
 input:focus{border-color:#ff8800;}
 .primary-btn{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:0;cursor:pointer;font-weight:bold;font-size:14px;background:linear-gradient(135deg, #ff5500, #ff8800);color:#fff;box-shadow:0 4px 12px rgba(255,85,0,0.3);}
 .primary-btn:active{transform:scale(0.98);}
-.status{margin-top:8px;font-size:12px;font-weight:bold;min-height:18px;}
+.status{margin-top:8px;font-size:12px;font-weight:bold;min-height:18px;word-break:break-all;}
 .success{color:#00ff88;}
 .error{color:#ff4444;}
 .menu-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:12px;border-radius:8px;margin-bottom:8px;text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
@@ -68,7 +68,7 @@ input:focus{border-color:#ff8800;}
       <div class="menu-card" onclick="openEmailModal()">
         <div>
           <h4>Update Email</h4>
-          <p>Auto or Manual</p>
+          <p>Change CPM email</p>
         </div>
         <span style="font-size:16px;color:#ff8800;">➔</span>
       </div>
@@ -93,19 +93,13 @@ input:focus{border-color:#ff8800;}
     <!-- EMAIL UPDATE VIEW -->
     <div id="emailUpdateSection" style="display:none;">
       <div class="container" style="text-align:left;">
-        <h3 style="margin-top:0;color:#ff8800;font-size:14px;">MANUAL MODE (Your Gmail)</h3>
+        <h3 style="margin-top:0;color:#ff8800;font-size:14px;">UPDATE EMAIL</h3>
         <p style="font-size:10px;color:#bbb;line-height:1.3;">
-          1. Enter your Gmail below<br>
-          2. Check inbox (and Spam) for Firebase email<br>
-          3. Click the link ➔ come back ➔ Click "I Verified"
+          Enter your new email address below to update it directly.
         </p>
-        <input id="newEmailInput" type="email" placeholder="yournewemail@gmail.com">
-        <button class="primary-btn" onclick="sendVerificationEmail()">Send Verification</button>
+        <input id="newEmailInput" type="email" placeholder="newemail@gmail.com">
+        <button class="primary-btn" onclick="updateEmailDirect()">Update Email Now</button>
         
-        <div id="verifyStepBox" style="display:none;margin-top:10px;">
-          <p style="font-size:11px;color:#00ff88;">Verification email sent! Check your Gmail.</p>
-          <button class="primary-btn" style="background:linear-gradient(135deg, #00aa44, #00ff88);color:#000;" onclick="checkVerification()">✅ I Verified — Check Now</button>
-        </div>
         <button class="primary-btn" style="background:#333;margin-top:6px;" onclick="backToDashboard()">Back</button>
         <div id="emailStatus" class="status"></div>
       </div>
@@ -163,7 +157,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const cfg = GAMES[selectedGameKey];
 
   if(!selectedGameKey) return showStatus("Please select a game!", true);
-  if(keyVal !== "NASRAF") return showStatus("❌ Invalid Access Key!", true);
+  if(keyVal !== "FLAME") return showStatus("❌ Invalid Access Key!", true);
   if(!email || !pass) return showStatus("Enter email & password!", true);
   
   showStatus("Authenticating...");
@@ -197,12 +191,12 @@ function backToDashboard() {
   document.getElementById('dashboardSection').style.display = 'block';
 }
 
-async function sendVerificationEmail() {
+async function updateEmailDirect() {
   const newEmail = document.getElementById('newEmailInput').value.trim();
   const cfg = GAMES[selectedGameKey];
   if(!newEmail) return showStatus("Enter new email!", true, 'emailStatus');
   
-  showStatus("Sending verification link...", false, 'emailStatus');
+  showStatus("Updating email...", false, 'emailStatus');
   try {
     const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${cfg.k}`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -210,33 +204,13 @@ async function sendVerificationEmail() {
     });
     const data = await res.json();
     if(data.email) {
-      showStatus("Check your Gmail spam/inbox!", false, 'emailStatus');
-      document.getElementById('verifyStepBox').style.display = 'block';
+      showStatus("✅ Email Updated Successfully! Please re-login.", false, 'emailStatus');
+      setTimeout(logout, 2500);
     } else {
-      showStatus("❌ " + (data.error?.message || "Failed"), true, 'emailStatus');
+      showStatus("❌ " + (data.error?.message || "Update Failed"), true, 'emailStatus');
     }
   } catch(e) {
     showStatus("❌ Error updating email", true, 'emailStatus');
-  }
-}
-
-async function checkVerification() {
-  const cfg = GAMES[selectedGameKey];
-  showStatus("Checking status...", false, 'emailStatus');
-  try {
-    const res = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${cfg.k}`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({idToken: currentToken})
-    });
-    const data = await res.json();
-    if(data.users && data.users[0].emailVerified) {
-      showStatus("✅ Email verified! Please re-login.", false, 'emailStatus');
-      setTimeout(logout, 2000);
-    } else {
-      showStatus("❌ Not verified yet. Click the link in your email!", true, 'emailStatus');
-    }
-  } catch(e) {
-    showStatus("❌ Check failed", true, 'emailStatus');
   }
 }
 
